@@ -1,0 +1,1 @@
+Act as a minimal Grok3-like agent. Scrape chat data, filter by keywords, store locally, and serve via a local server.

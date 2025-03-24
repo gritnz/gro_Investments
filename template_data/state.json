@@ -1,0 +1,12 @@
+{
+  "chat_summaries": [],
+  "wip": {
+    "current_task": "",
+    "notes": ""
+  },
+  "related_data": {
+    "prompts": "docs/prompts.md"
+  },
+  "history": [],
+  "input_count": 0
+}

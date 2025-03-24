@@ -1,0 +1,6 @@
+server:
+  host: localhost
+  port: 8000
+data:
+  max_size_mb: 50
+  keywords: ["project", "task"]
