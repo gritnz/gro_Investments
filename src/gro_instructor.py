@@ -1,14 +1,16 @@
 import json
 import os
 import sys
+import re
 from datetime import datetime
 
 class GroInstructor:
     def __init__(self):
         # Use relative paths based on the project directory
         project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        self.state_file = os.path.join(project_dir, "data", "historical", "state.json")
-        self.log_file = os.path.join(project_dir, "data", "historical", "history_log.jsonl")
+        self.state_file = os.path.join(project_dir, "template_data", "state.json")
+        self.log_file = os.path.join(project_dir, "template_data", "history_log.jsonl")
+        self.summaries_file = os.path.join(project_dir, "docs", "e3_summaries.md")
         # Define responses for keywords and #e1–#e5 tags
         self.responses = {
             "hello": "Hey there! How can I assist you today?",
@@ -21,6 +23,61 @@ class GroInstructor:
             "#e4": "Command suggestion: I’ll provide a command to run.",
             "#e5": "User interaction: I’ll respond directly to your query."
         }
+
+    def capture_e3_to_summaries_md(self, summary_text, state):
+        today = datetime.now().strftime("%Y-%m-%d")
+        summary_count = 0
+        try:
+            with open(self.summaries_file, "r", encoding="utf-8") as f:
+                content = f.read()
+                summary_count = len(re.findall(f"Date\\*\\*: {today}", content))
+        except FileNotFoundError:
+            pass
+        summary_count += 1
+        summary_label = f"Summary {summary_count}" if summary_count > 1 else "Summary"
+        entry = (f"- **Date**: {today}\n"
+                 f"- **{summary_label}**: {summary_text}\n"
+                 f"- **Follow-Up**:\n"
+                 f"- **State**: {state}\n\n")
+        with open(self.summaries_file, "a", encoding="utf-8") as f:
+            f.write(entry)
+
+    def capture_e3_to_state_json(self, state, summary_text, state_value):
+        if "e3_reflections" not in state:
+            state["e3_reflections"] = []
+        state["e3_reflections"].append({
+            "date": datetime.now().strftime("%Y-%m-%d"),
+            "summary": summary_text,
+            "state": state_value
+        })
+        return state
+
+    def capture_dt_to_summaries_md(self, dt_content):
+        today = datetime.now().strftime("%Y-%m-%d")
+        goal_count = 0
+        try:
+            with open(self.summaries_file, "r", encoding="utf-8") as f:
+                content = f.read()
+                future_vision_section = re.search(r"## Future Vision \(#DT - Deep Thought\)(.*?)(?=\n## |\Z)", content, re.DOTALL)
+                if future_vision_section:
+                    section_content = future_vision_section.group(1)
+                    goal_count = len(re.findall(f"Date\\*\\*: {today}.*?Goal \\d+", section_content, re.DOTALL))
+        except FileNotFoundError:
+            pass
+        goal_count += 1
+        goal_label = f"Goal {goal_count}" if goal_count > 1 else "Goal 1"
+        entry = (f"- **Date**: {today}\n"
+                 f"- **{goal_label}**: {dt_content}\n"
+                 f"- **Purpose**: [To be defined]\n"
+                 f"- **State**: Longer Term, DT\n\n")
+        with open(self.summaries_file, "r+", encoding="utf-8") as f:
+            content = f.read()
+            if "Future Vision (#DT - Deep Thought)" not in content:
+                content += "\n## Future Vision (#DT - Deep Thought)\n" + entry
+            else:
+                content = content.replace("## Future Vision (#DT - Deep Thought)", "## Future Vision (#DT - Deep Thought)\n" + entry)
+            f.seek(0)
+            f.write(content)
 
     def respond(self, message):
         state = self.load_state()
@@ -67,11 +124,25 @@ class GroInstructor:
         if state["input_count"] % 10 == 0 or "summarize" in message.lower():
             self.summarize_history(state)
 
+        # Handle #e3 automation
+        if "#e3" in message:
+            state_value = "WIP, Short Term"
+            dt_match = re.search(r"#DT.*?‘deep thought’(.*?)#DTend", message, re.DOTALL)
+            if dt_match:
+                dt_content = dt_match.group(1).strip()
+                summary = (f"Processed #e3 input: {message.split('#DT')[0].strip()}. "
+                           f"For #DT, planned: {dt_content}.")
+                state_value = "WIP, Short Term, DT"
+                self.capture_dt_to_summaries_md(dt_content)
+            else:
+                summary = f"Processed #e3 input: {message}"
+            self.capture_e3_to_summaries_md(summary, state_value)
+            state = self.capture_e3_to_state_json(state, summary, state_value)
+
         self.save_state(state)
 
         # Check for #e1–#e5 responses first
         if found_tag and found_tag in self.responses:
-            # Add context from recent history
             recent_history = self.get_recent_history(state)
             response = f"{self.responses[found_tag]}\nRecent context: {recent_history}"
             return response
@@ -81,7 +152,6 @@ class GroInstructor:
             if key.startswith("#e"):
                 continue  # Skip #e tags, already handled
             if key in message.lower():
-                # Add context from recent history
                 recent_history = self.get_recent_history(state)
                 return f"{value}\nRecent context: {recent_history}"
         return "I’m not sure—can you clarify?"
@@ -153,7 +223,6 @@ class GroInstructor:
 
 if __name__ == "__main__":
     agent = GroInstructor()
-    # Check if running interactively (i.e., input is from a terminal)
     if sys.stdin.isatty():
         while True:
             try:
@@ -164,7 +233,6 @@ if __name__ == "__main__":
                 print("\nExiting...")
                 break
     else:
-        # Non-interactive mode: process one input and exit
         message = input("You: ")
         reply = agent.respond(message)
         print(f"gro_instructor: {reply}")

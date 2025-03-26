@@ -5,8 +5,14 @@
 - **Process**: After a #e3 chat, the condensed summary will be provided in the format below. Copy the summary and paste it into this file.
 
 ## Summaries
-- **Date**: March 21, 2025
-- **Summary**: Plan to automate Git processes for future projects to streamline setup (not now, but soon). Noted uncertainty about `setup_project.py` in the `4feaA9I` commit; suggested checking with `git show`. Proposed creating a mini chat state for #e1–#e5 to track debugging (#e1) in real time, summarizing key points with “My Thoughts,” and condensing using a custom prompt for #e1 chats. Suggested storing condensed #e1 summaries in `state.json` or a development log to retain critical project impacts. Emphasized keeping the approach simple, modular, and action-based, aiming to reset to `4feaA9I` and start a standalone `TestProject` next.
+- **Date**: 2025-03-27
+- **Summary 1**: Processed #e3 input: Test automation for e3 capture in gro_Investments. Planning to improve logging. For #DT, planned: Explore adding a logging module to track all #e1–#e5 inputs in real time, using a lightweight database like SQLite.
+- **Follow-Up**:
+- **State**: WIP, Short Term, DT
 
-- **Date**: March 21, 2025
-- **Summary**: Suggested semi-automating #e3 capture by providing a condensed summary at the end of each #e3 chat, which can be copied and pasted into `e3_summaries.md`. Added the manual capture prompt to `e3_summaries.md` to document the process. Plan to improve automation later.
+## Future Vision (#DT - Deep Thought)
+- **Date**: 2025-03-27
+- **Goal 1**: Explore adding a logging module to track all #e1–#e5 inputs in real time, using a lightweight database like SQLite.
+- **Purpose**: [To be defined]
+- **State**: Longer Term, DT
+
